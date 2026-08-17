@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  backend_api:
+    build:
+      context: ./src
+      dockerfile: Veterinaria.API/Dockerfile
+    container_name: backend_api
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql_db
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql_db;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};
+
+volumes:
+  mysql_data:
