@@ -1,55 +1,41 @@
-version: '3.8'
-
 services:
-  # 1. Base de datos MySQL
-  mysql_db:
+  mysql-db:
     image: mysql:8.0
-    container_name: mysql_db
-    restart: always
-    env_file:
-      - .env
+    container_name: veterinaria_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: veterinaria_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - veterinaria_network
+    restart: unless-stopped
 
-  # 2. Backend ASP.NET Core 10 Web API
-  backend_api:
+  api:
     build:
-      context: ./API/src
-      dockerfile: Veterinaria.API/Dockerfile
-    container_name: backend_api
-    restart: always
+      context: ./API
+      dockerfile: src/Veterinaria.API/Dockerfile
+    container_name: veterinaria_api
+    env_file: .env
     ports:
       - "5000:5000"
     depends_on:
-      - mysql_db
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=mysql_db;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};
-      - ASPNETCORE_ENVIRONMENT=Development
-    networks:
-      - veterinaria_network
+      - mysql-db
+    restart: unless-stopped
 
-  # 3. Frontend Angular Client (NGINX)
-  frontend_client:
+  frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: frontend_client
-    restart: always
+    container_name: veterinaria_frontend
     ports:
       - "4200:80"
     depends_on:
-      - backend_api
-    networks:
-      - veterinaria_network
+      - api
+    restart: unless-stopped
 
 volumes:
   mysql_data:
-
-networks:
-  veterinaria_network:
-    driver: bridge

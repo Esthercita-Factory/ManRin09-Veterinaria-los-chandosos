@@ -7,6 +7,7 @@ public class Cita
     public string Motivo { get; set; } = string.Empty;
     public string Estado { get; set; } = string.Empty;
     public int MascotaId { get; set; }
+    public int VeterinarioId { get; set; } // The doctor handling this appointment
     
     public Mascota? Mascota { get; set; }
 }

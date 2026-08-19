@@ -7,13 +7,13 @@ ENV ASPNETCORE_URLS=http://+:5000
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-COPY ["Veterinaria.API/Veterinaria.API.csproj", "Veterinaria.API/"]
-COPY ["Veterinaria.Application/Veterinaria.Application.csproj", "Veterinaria.Application/"]
-COPY ["Veterinaria.Domain/Veterinaria.Domain.csproj", "Veterinaria.Domain/"]
-COPY ["Veterinaria.Infrastructure/Veterinaria.Infrastructure.csproj", "Veterinaria.Infrastructure/"]
-RUN dotnet restore "Veterinaria.API/Veterinaria.API.csproj"
+COPY ["src/Veterinaria.API/Veterinaria.API.csproj", "src/Veterinaria.API/"]
+COPY ["src/Veterinaria.Application/Veterinaria.Application.csproj", "src/Veterinaria.Application/"]
+COPY ["src/Veterinaria.Domain/Veterinaria.Domain.csproj", "src/Veterinaria.Domain/"]
+COPY ["src/Veterinaria.Infrastructure/Veterinaria.Infrastructure.csproj", "src/Veterinaria.Infrastructure/"]
+RUN dotnet restore "src/Veterinaria.API/Veterinaria.API.csproj"
 COPY . .
-WORKDIR "/src/Veterinaria.API"
+WORKDIR "/src/src/Veterinaria.API"
 RUN dotnet build "Veterinaria.API.csproj" -c Release -o /app/build
 
 FROM build AS publish

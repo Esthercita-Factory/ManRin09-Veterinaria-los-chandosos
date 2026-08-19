@@ -12,4 +12,5 @@ public class AppDbContext : DbContext
     public DbSet<Dueno> Duenos { get; set; }
     public DbSet<Mascota> Mascotas { get; set; }
     public DbSet<Cita> Citas { get; set; }
+    public DbSet<Veterinario> Veterinarios => Set<Veterinario>();
 }

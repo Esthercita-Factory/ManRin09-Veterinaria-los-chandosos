@@ -6,4 +6,5 @@ public class CrearCitaDto
     public string Motivo { get; set; } = string.Empty;
     public string Estado { get; set; } = string.Empty;
     public int MascotaId { get; set; }
+    public int VeterinarioId { get; set; }
 }

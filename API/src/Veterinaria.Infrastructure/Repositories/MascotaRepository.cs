@@ -1,7 +1,48 @@
+using Microsoft.EntityFrameworkCore;
+using Veterinaria.Domain.Entities;
 using Veterinaria.Domain.Interfaces;
+using Veterinaria.Infrastructure.Data;
 
 namespace Veterinaria.Infrastructure.Repositories;
 
 public class MascotaRepository : IMascotaRepository
 {
+    private readonly AppDbContext _context;
+    public MascotaRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IEnumerable<Mascota>> ObtenerTodasAsync()
+    {
+        return await _context.Mascotas.ToListAsync();
+    }
+
+    public async Task<IEnumerable<Mascota>> ObtenerPorDuenoIdAsync(int duenoId)
+    {
+        return await _context.Mascotas.Where(m => m.DuenoId == duenoId).ToListAsync();
+    }
+
+    public async Task<Mascota?> ObtenerPorIdAsync(int id)
+    {
+        return await _context.Mascotas.FindAsync(id);
+    }
+
+    public async Task GuardarAsync(Mascota mascota)
+    {
+        await _context.Mascotas.AddAsync(mascota);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task ActualizarAsync(Mascota mascota)
+    {
+        _context.Mascotas.Update(mascota);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task EliminarAsync(Mascota mascota)
+    {
+        _context.Mascotas.Remove(mascota);
+        await _context.SaveChangesAsync();
+    }
 }
