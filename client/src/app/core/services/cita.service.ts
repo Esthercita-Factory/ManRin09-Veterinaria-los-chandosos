@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class CitaService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:5000/api/citas';
+  private apiUrl = '/api/citas';
 
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` });

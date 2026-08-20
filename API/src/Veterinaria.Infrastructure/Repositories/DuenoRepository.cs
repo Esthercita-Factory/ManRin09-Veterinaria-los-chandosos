@@ -24,12 +24,12 @@ namespace Veterinaria.Infrastructure.Repositories
 
         public async Task<Dueno?> ObtenerPorIdAsync(int id)
         {
-            return await _context.Duenos.FindAsync(id);
+            return await _context.Duenos.Include(d => d.Mascotas).FirstOrDefaultAsync(d => d.Id == id);
         }
 
         public async Task<IEnumerable<Dueno>> ObtenerTodosAsync()
         {
-            return await _context.Duenos.ToListAsync();
+            return await _context.Duenos.Include(d => d.Mascotas).ToListAsync();
         }
 
         public async Task GuardarAsync(Dueno dueno)

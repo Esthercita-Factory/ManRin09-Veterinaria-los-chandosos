@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ClienteService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:5000/api';
+  private apiUrl = '/api';
 
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` });
@@ -19,8 +19,8 @@ export class ClienteService {
     return this.http.get<any>(`${this.apiUrl}/duenos/${id}`, { headers: this.headers() });
   }
 
-  create(data: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/registro/dueno`, data, { headers: this.headers() });
+  create(data: { email: string; documentoIdentificacion: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/duenos`, data, { headers: this.headers() });
   }
 
   update(id: number, data: any): Observable<any> {

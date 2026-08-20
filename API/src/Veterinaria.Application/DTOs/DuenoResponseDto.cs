@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Veterinaria.Application.DTOs;
 
 public class DuenoResponseDto
@@ -7,4 +9,5 @@ public class DuenoResponseDto
     public string DocumentoIdentificacion { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public IEnumerable<MascotaResponseDto> Mascotas { get; set; } = new List<MascotaResponseDto>();
 }

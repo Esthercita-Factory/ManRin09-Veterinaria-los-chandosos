@@ -18,6 +18,42 @@ public class DuenoService : IDuenoService
         _duenoRepository = duenoRepository;
     }
 
+    public async Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto)
+    {
+        var email = dto.Email.Trim().ToLowerInvariant();
+
+        var existente = await _duenoRepository.ObtenerPorEmailAsync(email);
+        if (existente != null)
+            throw new InvalidOperationException("El correo electrónico ya se encuentra registrado.");
+
+        // Nombre provisional: prefijo del email con primera letra en mayúscula
+        var nombreProvisional = char.ToUpper(email[0]) + email.Substring(1, email.IndexOf('@') - 1);
+
+        // Contraseña temporal aleatoria segura (16 chars), el dueño la cambiará luego
+        var tempPassword = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+        var nuevoDueno = new Dueno
+        {
+            Nombre = nombreProvisional,
+            Email = email,
+            DocumentoIdentificacion = dto.DocumentoIdentificacion.Trim(),
+            Telefono = string.Empty,
+            PasswordHash = passwordHash
+        };
+
+        await _duenoRepository.GuardarAsync(nuevoDueno);
+
+        return new DuenoResponseDto
+        {
+            Id = nuevoDueno.Id,
+            Nombre = nuevoDueno.Nombre,
+            Email = nuevoDueno.Email,
+            DocumentoIdentificacion = nuevoDueno.DocumentoIdentificacion,
+            Telefono = nuevoDueno.Telefono
+        };
+    }
+
     public async Task<IEnumerable<DuenoResponseDto>> ObtenerTodosAsync()
     {
         var duenos = await _duenoRepository.ObtenerTodosAsync();
@@ -27,7 +63,16 @@ public class DuenoService : IDuenoService
             Nombre = d.Nombre,
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
-            Email = d.Email
+            Email = d.Email,
+            Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
+            {
+                Id = m.Id,
+                Nombre = m.Nombre,
+                Especie = m.Especie,
+                Raza = m.Raza,
+                HistorialMedico = m.HistorialMedico,
+                DuenoId = m.DuenoId
+            }) ?? new List<MascotaResponseDto>()
         });
     }
 
@@ -41,7 +86,16 @@ public class DuenoService : IDuenoService
             Nombre = d.Nombre,
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
-            Email = d.Email
+            Email = d.Email,
+            Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
+            {
+                Id = m.Id,
+                Nombre = m.Nombre,
+                Especie = m.Especie,
+                Raza = m.Raza,
+                HistorialMedico = m.HistorialMedico,
+                DuenoId = m.DuenoId
+            }) ?? new List<MascotaResponseDto>()
         };
     }
 

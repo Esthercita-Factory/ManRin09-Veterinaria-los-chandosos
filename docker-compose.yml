@@ -1,41 +1,45 @@
 services:
   mysql-db:
     image: mysql:8.0
-    container_name: veterinaria_mysql
+    container_name: veterinaria_mysql_prod
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: veterinaria_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
+      - mysql_prod_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
 
   api:
     build:
       context: ./API
       dockerfile: src/Veterinaria.API/Dockerfile
-    container_name: veterinaria_api
-    env_file: .env
-    ports:
-      - "5000:5000"
+    container_name: veterinaria_api_prod
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: Server=mysql-db;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};
     depends_on:
-      - mysql-db
-    restart: unless-stopped
+      mysql-db:
+        condition: service_healthy
+    restart: always
 
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: veterinaria_frontend
+    container_name: veterinaria_frontend_prod
     ports:
-      - "4200:80"
+      - "4250:80"
     depends_on:
       - api
-    restart: unless-stopped
+    restart: always
 
 volumes:
-  mysql_data:
+  mysql_prod_data:

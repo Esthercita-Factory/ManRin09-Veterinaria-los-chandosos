@@ -1,7 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { ClienteService } from '../../../../../core/services/cliente.service';
 import { MascotaService } from '../../../../../core/services/mascota.service';
@@ -137,11 +138,35 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
           @if (activeTab === 'clientes') {
             <div class="flex items-center justify-between mb-6">
               <h1 class="text-3xl font-extrabold text-[#233124] tracking-tight">Clientes</h1>
-              <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nuevo Cliente</button>
+              @if (!loadingClientes && clientes.length > 0) {
+                <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nuevo Cliente</button>
+              }
             </div>
-            @if (errorClientes) { <div class="bg-red-50 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">{{ errorClientes }}</div> }
-            @if (loadingClientes) { <p class="text-gray-400">Cargando clientes...</p> }
-            @if (!loadingClientes) {
+            
+            @if (errorClientes) { 
+              <div class="bg-red-50 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">{{ errorClientes }}</div> 
+            }
+
+            @if (loadingClientes) { 
+              <div class="flex flex-col items-center justify-center py-12">
+                <div class="w-10 h-10 border-4 border-gray-200 border-t-[#89A88C] rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-500 font-medium">Cargando clientes...</p>
+              </div>
+            } @else if (clientes.length === 0) {
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-1">No hay clientes añadidos actualmente</h3>
+                <p class="text-gray-500 text-sm mb-6 max-w-sm">Comienza agregando tu primer cliente (dueño de mascota) para empezar a gestionar sus citas y expedientes médicos.</p>
+                <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Añadir primer cliente
+                </button>
+              </div>
+            } @else {
               <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
                 <table class="w-full text-left text-sm">
                   <thead><tr class="bg-gray-100/70 text-gray-700 font-semibold text-xs">
@@ -149,6 +174,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                     <th class="py-3 px-4">Nombre</th>
                     <th class="py-3 px-4">Email</th>
                     <th class="py-3 px-4">Teléfono</th>
+                    <th class="py-3 px-4">Mascotas</th>
                     <th class="py-3 px-4 rounded-tr-2xl">Acciones</th>
                   </tr></thead>
                   <tbody class="divide-y divide-gray-100">
@@ -157,15 +183,17 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                         <td class="py-3 px-4 text-gray-500">{{ c.id }}</td>
                         <td class="py-3 px-4 font-semibold">{{ c.nombre }}</td>
                         <td class="py-3 px-4 text-gray-600">{{ c.email }}</td>
-                        <td class="py-3 px-4 text-gray-600">{{ c.telefono }}</td>
+                        <td class="py-3 px-4 text-gray-600">{{ c.telefono || '—' }}</td>
+                        <td class="py-3 px-4">
+                          <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-semibold">
+                            {{ c.mascotas?.length || 0 }} asociadas
+                          </span>
+                        </td>
                         <td class="py-3 px-4 flex gap-2">
                           <button (click)="openClienteModal(c)" class="text-xs bg-[#89A88C]/15 text-[#3B5A45] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#89A88C]/30 transition">Editar</button>
                           <button (click)="deleteCliente(c.id)" class="text-xs bg-red-50 text-red-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">Eliminar</button>
                         </td>
                       </tr>
-                    }
-                    @if (clientes.length === 0) {
-                      <tr><td colspan="5" class="py-8 text-center text-gray-400">No hay clientes registrados.</td></tr>
                     }
                   </tbody>
                 </table>
@@ -314,31 +342,17 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
             @if (modalError) { <div class="bg-red-50 text-red-600 rounded-lg px-3 py-2 mb-4 text-sm">{{ modalError }}</div> }
             <div class="space-y-3">
               <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nombre</label>
-                <input [(ngModel)]="clienteForm.nombre" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Nombre completo">
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Documento</label>
-                <input [(ngModel)]="clienteForm.documentoIdentificacion" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Ej. 123456789">
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</label>
+                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Correo Electrónico</label>
                 <input [(ngModel)]="clienteForm.email" type="email" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="correo@ejemplo.com">
               </div>
               <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Teléfono</label>
-                <input [(ngModel)]="clienteForm.telefono" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="555-0000">
+                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Número de Identificación</label>
+                <input [(ngModel)]="clienteForm.documentoIdentificacion" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Ej. 123456789">
               </div>
-              @if (!editingCliente?.id) {
-                <div>
-                  <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Contraseña</label>
-                  <input [(ngModel)]="clienteForm.password" type="password" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Contraseña">
-                </div>
-              }
             </div>
             <div class="flex gap-3 mt-6">
               <button (click)="showClienteModal=false" class="flex-1 border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Cancelar</button>
-              <button (click)="saveCliente()" [disabled]="savingCliente" class="flex-1 bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold py-2.5 rounded-xl text-sm transition disabled:opacity-60">
+              <button (click)="saveCliente()" [disabled]="savingCliente || !clienteForm.email || !clienteForm.documentoIdentificacion" class="flex-1 bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold py-2.5 rounded-xl text-sm transition disabled:opacity-60">
                 {{ savingCliente ? 'Guardando...' : 'Guardar' }}
               </button>
             </div>
@@ -467,6 +481,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly citaService = inject(CitaService);
   private readonly veterinarioService = inject(VeterinarioService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   activeTab = 'dashboard';
   userNombre = localStorage.getItem('user_nombre') || '';
@@ -509,7 +524,7 @@ export class DashboardPageComponent implements OnInit {
   savingCita = false;
 
   // Forms
-  clienteForm = { nombre: '', documentoIdentificacion: '', email: '', telefono: '', password: '' };
+  clienteForm = { email: '', documentoIdentificacion: '' };
   mascotaForm = { nombre: '', especie: '', raza: '', duenoId: 0, historialMedico: '' };
   citaForm = { mascotaId: 0, fecha: '', hora: '08:00', motivo: '', estado: 'Pendiente' };
 
@@ -533,28 +548,67 @@ export class DashboardPageComponent implements OnInit {
   loadClientes() {
     this.loadingClientes = true;
     this.errorClientes = '';
-    this.clienteService.getAll().subscribe({
-      next: (data) => { this.clientes = data; this.loadingClientes = false; },
-      error: (e) => { this.errorClientes = 'Error al cargar clientes: ' + (e.error?.message || e.message); this.loadingClientes = false; }
-    });
+    this.cdr.markForCheck();
+
+    this.clienteService.getAll()
+      .pipe(finalize(() => {
+        this.loadingClientes = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: (data) => {
+          this.clientes = data;
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          this.errorClientes = 'Error al cargar clientes: ' + (e.error?.message || e.message);
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   loadMascotas() {
     this.loadingMascotas = true;
     this.errorMascotas = '';
-    this.mascotaService.getAll().subscribe({
-      next: (data) => { this.mascotas = data; this.loadingMascotas = false; },
-      error: (e) => { this.errorMascotas = 'Error al cargar mascotas: ' + (e.error?.message || e.message); this.loadingMascotas = false; }
-    });
+    this.cdr.markForCheck();
+
+    this.mascotaService.getAll()
+      .pipe(finalize(() => {
+        this.loadingMascotas = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: (data) => {
+          this.mascotas = data;
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          this.errorMascotas = 'Error al cargar mascotas: ' + (e.error?.message || e.message);
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   loadCitas() {
     this.loadingCitas = true;
     this.errorCitas = '';
-    this.citaService.getAll().subscribe({
-      next: (data) => { this.citas = data; this.loadingCitas = false; },
-      error: (e) => { this.errorCitas = 'Error al cargar citas: ' + (e.error?.message || e.message); this.loadingCitas = false; }
-    });
+    this.cdr.markForCheck();
+
+    this.citaService.getAll()
+      .pipe(finalize(() => {
+        this.loadingCitas = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: (data) => {
+          this.citas = data;
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          this.errorCitas = 'Error al cargar citas: ' + (e.error?.message || e.message);
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   logout() {
@@ -596,21 +650,30 @@ export class DashboardPageComponent implements OnInit {
   openClienteModal(c?: any) {
     this.editingCliente = c || null;
     this.modalError = '';
-    this.clienteForm = c ? { nombre: c.nombre, documentoIdentificacion: c.documentoIdentificacion || '', email: c.email, telefono: c.telefono, password: '' } : { nombre: '', documentoIdentificacion: '', email: '', telefono: '', password: '' };
+    this.clienteForm = c
+      ? { email: c.email, documentoIdentificacion: c.documentoIdentificacion || '' }
+      : { email: '', documentoIdentificacion: '' };
     this.showClienteModal = true;
   }
 
   saveCliente() {
     this.savingCliente = true;
     this.modalError = '';
-    const payload = this.editingCliente?.id 
-      ? { nombre: this.clienteForm.nombre, documentoIdentificacion: this.clienteForm.documentoIdentificacion, email: this.clienteForm.email, telefono: this.clienteForm.telefono }
-      : this.clienteForm;
-      
+
     const obs = this.editingCliente?.id
-      ? this.clienteService.update(this.editingCliente.id, payload)
-      : this.clienteService.create(payload);
-      
+      // Edición: PUT acepta ActualizarDuenoDto — mandamos lo que tenemos
+      ? this.clienteService.update(this.editingCliente.id, {
+          email: this.clienteForm.email,
+          documentoIdentificacion: this.clienteForm.documentoIdentificacion,
+          nombre: this.editingCliente.nombre ?? '',
+          telefono: this.editingCliente.telefono ?? ''
+        })
+      // Creación: POST solo necesita email y documento
+      : this.clienteService.create({
+          email: this.clienteForm.email,
+          documentoIdentificacion: this.clienteForm.documentoIdentificacion
+        });
+
     obs.subscribe({
       next: () => { this.showClienteModal = false; this.savingCliente = false; this.loadClientes(); this.showSuccessAlert('Cliente guardado exitosamente.'); },
       error: (e) => { this.modalError = e.error?.message || 'Error al guardar.'; this.savingCliente = false; }
@@ -640,7 +703,13 @@ export class DashboardPageComponent implements OnInit {
       ? this.mascotaService.update(this.editingMascota.id, this.mascotaForm)
       : this.mascotaService.create(this.mascotaForm);
     obs.subscribe({
-      next: () => { this.showMascotaModal = false; this.savingMascota = false; this.loadMascotas(); this.showSuccessAlert('Mascota guardada exitosamente.'); },
+      next: () => { 
+        this.showMascotaModal = false; 
+        this.savingMascota = false; 
+        this.loadMascotas(); 
+        this.loadClientes(); // <-- Recargar clientes para reflejar la mascota añadida
+        this.showSuccessAlert('Mascota guardada exitosamente.'); 
+      },
       error: (e) => { this.modalError = e.error?.message || 'Error al guardar.'; this.savingMascota = false; }
     });
   }
@@ -648,7 +717,10 @@ export class DashboardPageComponent implements OnInit {
   deleteMascota(id: number) {
     if (!confirm('¿Eliminar esta mascota?')) return;
     this.mascotaService.delete(id).subscribe({
-      next: () => this.loadMascotas(),
+      next: () => {
+        this.loadMascotas();
+        this.loadClientes(); // <-- Recargar clientes para reflejar la mascota eliminada
+      },
       error: (e) => this.errorMascotas = e.error?.message || 'Error al eliminar.'
     });
   }

@@ -8,6 +8,7 @@ public interface IDuenoService
 {
     Task<IEnumerable<DuenoResponseDto>> ObtenerTodosAsync();
     Task<DuenoResponseDto?> ObtenerPorIdAsync(int id);
+    Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto);
     Task ActualizarAsync(int id, ActualizarDuenoDto dto);
     Task EliminarAsync(int id);
 }

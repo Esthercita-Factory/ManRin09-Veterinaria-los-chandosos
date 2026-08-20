@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class MascotaService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:5000/api/mascotas';
+  private apiUrl = '/api/mascotas';
 
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` });

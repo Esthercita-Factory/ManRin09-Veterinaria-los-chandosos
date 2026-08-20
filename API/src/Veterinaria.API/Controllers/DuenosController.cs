@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +32,20 @@ public class DuenosController : ControllerBase
         var dueno = await _duenoService.ObtenerPorIdAsync(id);
         if (dueno == null) return NotFound();
         return Ok(dueno);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<DuenoResponseDto>> Post([FromBody] CrearDuenoDto dto)
+    {
+        try
+        {
+            var result = await _duenoService.CrearAsync(dto);
+            return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
