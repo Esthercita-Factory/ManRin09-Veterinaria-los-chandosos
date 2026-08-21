@@ -18,7 +18,7 @@ public class DuenoService : IDuenoService
         _duenoRepository = duenoRepository;
     }
 
-    public async Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto)
+    public async Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto, int? veterinarioId = null)
     {
         var email = dto.Email.Trim().ToLowerInvariant();
 
@@ -39,7 +39,8 @@ public class DuenoService : IDuenoService
             Email = email,
             DocumentoIdentificacion = dto.DocumentoIdentificacion.Trim(),
             Telefono = string.Empty,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            VeterinarioId = veterinarioId
         };
 
         await _duenoRepository.GuardarAsync(nuevoDueno);
@@ -49,14 +50,15 @@ public class DuenoService : IDuenoService
             Id = nuevoDueno.Id,
             Nombre = nuevoDueno.Nombre,
             Email = nuevoDueno.Email,
+            VeterinarioId = nuevoDueno.VeterinarioId,
             DocumentoIdentificacion = nuevoDueno.DocumentoIdentificacion,
             Telefono = nuevoDueno.Telefono
         };
     }
 
-    public async Task<IEnumerable<DuenoResponseDto>> ObtenerTodosAsync()
+    public async Task<IEnumerable<DuenoResponseDto>> BuscarAsync(int? veterinarioId = null, string? email = null, string? documento = null)
     {
-        var duenos = await _duenoRepository.ObtenerTodosAsync();
+        var duenos = await _duenoRepository.BuscarAsync(veterinarioId, email, documento);
         return duenos.Select(d => new DuenoResponseDto
         {
             Id = d.Id,
@@ -64,6 +66,7 @@ public class DuenoService : IDuenoService
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
             Email = d.Email,
+            VeterinarioId = d.VeterinarioId,
             Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
             {
                 Id = m.Id,
@@ -76,9 +79,9 @@ public class DuenoService : IDuenoService
         });
     }
 
-    public async Task<DuenoResponseDto?> ObtenerPorIdAsync(int id)
+    public async Task<DuenoResponseDto?> ObtenerPorIdAsync(int id, int? veterinarioId = null)
     {
-        var d = await _duenoRepository.ObtenerPorIdAsync(id);
+        var d = await _duenoRepository.ObtenerPorIdAsync(id, veterinarioId);
         if (d == null) return null;
         return new DuenoResponseDto
         {
@@ -87,6 +90,7 @@ public class DuenoService : IDuenoService
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
             Email = d.Email,
+            VeterinarioId = d.VeterinarioId,
             Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
             {
                 Id = m.Id,
@@ -99,9 +103,9 @@ public class DuenoService : IDuenoService
         };
     }
 
-    public async Task ActualizarAsync(int id, ActualizarDuenoDto dto)
+    public async Task ActualizarAsync(int id, ActualizarDuenoDto dto, int? veterinarioId = null)
     {
-        var d = await _duenoRepository.ObtenerPorIdAsync(id);
+        var d = await _duenoRepository.ObtenerPorIdAsync(id, veterinarioId);
         if (d == null) throw new InvalidOperationException("Dueño no encontrado.");
         
         d.Nombre = dto.Nombre;
@@ -112,9 +116,9 @@ public class DuenoService : IDuenoService
         await _duenoRepository.ActualizarAsync(d);
     }
 
-    public async Task EliminarAsync(int id)
+    public async Task EliminarAsync(int id, int? veterinarioId = null)
     {
-        var d = await _duenoRepository.ObtenerPorIdAsync(id);
+        var d = await _duenoRepository.ObtenerPorIdAsync(id, veterinarioId);
         if (d == null) throw new InvalidOperationException("Dueño no encontrado.");
         
         await _duenoRepository.EliminarAsync(d);

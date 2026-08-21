@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
@@ -11,8 +11,11 @@ export class ClienteService {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` });
   }
 
-  getAll(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/duenos`, { headers: this.headers() });
+  getAll(filters?: { email?: string; documento?: string }): Observable<any[]> {
+    let params = new HttpParams();
+    if (filters?.email) params = params.set('email', filters.email);
+    if (filters?.documento) params = params.set('documento', filters.documento);
+    return this.http.get<any[]>(`${this.apiUrl}/duenos`, { headers: this.headers(), params });
   }
 
   getById(id: number): Observable<any> {

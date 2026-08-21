@@ -6,9 +6,9 @@ namespace Veterinaria.Application.Interfaces;
 
 public interface IDuenoService
 {
-    Task<IEnumerable<DuenoResponseDto>> ObtenerTodosAsync();
-    Task<DuenoResponseDto?> ObtenerPorIdAsync(int id);
-    Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto);
-    Task ActualizarAsync(int id, ActualizarDuenoDto dto);
-    Task EliminarAsync(int id);
+    Task<IEnumerable<DuenoResponseDto>> BuscarAsync(int? veterinarioId = null, string? email = null, string? documento = null);
+    Task<DuenoResponseDto?> ObtenerPorIdAsync(int id, int? veterinarioId = null);
+    Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto, int? veterinarioId = null);
+    Task ActualizarAsync(int id, ActualizarDuenoDto dto, int? veterinarioId = null);
+    Task EliminarAsync(int id, int? veterinarioId = null);
 }

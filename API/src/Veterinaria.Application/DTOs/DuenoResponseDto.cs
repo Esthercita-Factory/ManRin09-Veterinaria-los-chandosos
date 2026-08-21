@@ -9,5 +9,6 @@ public class DuenoResponseDto
     public string DocumentoIdentificacion { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public int? VeterinarioId { get; set; }
     public IEnumerable<MascotaResponseDto> Mascotas { get; set; } = new List<MascotaResponseDto>();
 }

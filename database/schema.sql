@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `Duenos` (
     `Telefono`                LONGTEXT       NOT NULL,
     `Email`                   LONGTEXT       NOT NULL,
     `PasswordHash`            LONGTEXT       NOT NULL,   -- BCrypt hash almacenado como texto
+    `VeterinarioId`           INT            NULL,       -- FK → Veterinarios.Id (nullable, auto-registrados = NULL)
     CONSTRAINT `PK_Duenos` PRIMARY KEY (`Id`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
@@ -49,6 +50,14 @@ CREATE TABLE IF NOT EXISTS `Veterinarios` (
 
 -- Índice para búsquedas por email (login/registro)
 CREATE INDEX IF NOT EXISTS `IX_Veterinarios_Email` ON `Veterinarios` (`Email`(255));
+
+-- FK y índice para Duenos.VeterinarioId (se agrega aquí porque Veterinarios debe existir primero)
+CREATE INDEX IF NOT EXISTS `IX_Duenos_VeterinarioId` ON `Duenos` (`VeterinarioId`);
+ALTER TABLE `Duenos`
+    ADD CONSTRAINT `FK_Duenos_Veterinarios_VeterinarioId`
+    FOREIGN KEY (`VeterinarioId`) REFERENCES `Veterinarios` (`Id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE;
 
 -- -----------------------------------------------------------------------------
 -- Tabla: Mascotas

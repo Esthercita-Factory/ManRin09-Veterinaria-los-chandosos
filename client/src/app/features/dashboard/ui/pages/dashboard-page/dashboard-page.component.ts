@@ -60,7 +60,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               <span>Dashboard</span>
             </button>
-            <button (click)="activeTab='clientes'; loadClientes()" [class]="activeTab==='clientes' ? 'flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-white bg-[#89A88C] shadow-sm w-full text-left' : 'flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 w-full text-left transition'">
+            <button (click)="activeTab='clientes'" [class]="activeTab==='clientes' ? 'flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-white bg-[#89A88C] shadow-sm w-full text-left' : 'flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 w-full text-left transition'">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               <span>Clientes</span>
             </button>
@@ -138,9 +138,33 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
           @if (activeTab === 'clientes') {
             <div class="flex items-center justify-between mb-6">
               <h1 class="text-3xl font-extrabold text-[#233124] tracking-tight">Clientes</h1>
-              @if (!loadingClientes && clientes.length > 0) {
-                <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nuevo Cliente</button>
-              }
+              <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nuevo Cliente</button>
+            </div>
+
+            <!-- Barra de búsqueda por filtros -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+              <div class="flex flex-col sm:flex-row gap-3 items-end">
+                <div class="flex-1">
+                  <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Correo Electrónico</label>
+                  <input [(ngModel)]="searchEmail" type="email" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por email..." (keyup.enter)="searchClientes()" />
+                </div>
+                <div class="flex-1">
+                  <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nº Identificación</label>
+                  <input [(ngModel)]="searchDocumento" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por documento..." (keyup.enter)="searchClientes()" />
+                </div>
+                <div class="flex gap-2 shrink-0">
+                  <button (click)="searchClientes()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    Buscar
+                  </button>
+                  @if (searchEmail || searchDocumento) {
+                    <button (click)="clearSearch()" class="border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                      Limpiar
+                    </button>
+                  }
+                </div>
+              </div>
             </div>
             
             @if (errorClientes) { 
@@ -150,20 +174,32 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
             @if (loadingClientes) { 
               <div class="flex flex-col items-center justify-center py-12">
                 <div class="w-10 h-10 border-4 border-gray-200 border-t-[#89A88C] rounded-full animate-spin mb-3"></div>
-                <p class="text-gray-500 font-medium">Cargando clientes...</p>
+                <p class="text-gray-500 font-medium">Buscando cliente...</p>
               </div>
-            } @else if (clientes.length === 0) {
+            } @else if (!hasSearched) {
+              <!-- Estado inicial: invitación a buscar -->
               <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-center">
-                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <div class="w-16 h-16 bg-[#89A88C]/10 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-[#89A88C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
                 </div>
-                <h3 class="text-lg font-bold text-gray-800 mb-1">No hay clientes añadidos actualmente</h3>
-                <p class="text-gray-500 text-sm mb-6 max-w-sm">Comienza agregando tu primer cliente (dueño de mascota) para empezar a gestionar sus citas y expedientes médicos.</p>
+                <h3 class="text-lg font-bold text-gray-800 mb-1">Busque un cliente para comenzar</h3>
+                <p class="text-gray-500 text-sm max-w-sm">Ingrese el correo electrónico o número de identificación del cliente en la barra de búsqueda superior para localizar su expediente.</p>
+              </div>
+            } @else if (clientes.length === 0) {
+              <!-- Sin resultados tras búsqueda -->
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-1">No se encontró ningún cliente</h3>
+                <p class="text-gray-500 text-sm mb-6 max-w-sm">No existe un cliente con los datos proporcionados. Verifique la información o registre un nuevo cliente.</p>
                 <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center gap-2">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                  Añadir primer cliente
+                  Registrar nuevo cliente
                 </button>
               </div>
             } @else {
@@ -173,6 +209,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                     <th class="py-3 px-4 rounded-tl-2xl">ID</th>
                     <th class="py-3 px-4">Nombre</th>
                     <th class="py-3 px-4">Email</th>
+                    <th class="py-3 px-4">Documento</th>
                     <th class="py-3 px-4">Teléfono</th>
                     <th class="py-3 px-4">Mascotas</th>
                     <th class="py-3 px-4 rounded-tr-2xl">Acciones</th>
@@ -183,6 +220,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                         <td class="py-3 px-4 text-gray-500">{{ c.id }}</td>
                         <td class="py-3 px-4 font-semibold">{{ c.nombre }}</td>
                         <td class="py-3 px-4 text-gray-600">{{ c.email }}</td>
+                        <td class="py-3 px-4 text-gray-600">{{ c.documentoIdentificacion || '—' }}</td>
                         <td class="py-3 px-4 text-gray-600">{{ c.telefono || '—' }}</td>
                         <td class="py-3 px-4">
                           <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-semibold">
@@ -487,6 +525,7 @@ export class DashboardPageComponent implements OnInit {
   userNombre = localStorage.getItem('user_nombre') || '';
   userEmail = localStorage.getItem('user_email') || '';
   userId = parseInt(localStorage.getItem('user_id') || '0');
+  public userRole: string = '';
 
   perfilForm = { nombre: this.userNombre, email: this.userEmail, especialidad: '', tarjetaProfesional: '' };
   savingPerfil = false;
@@ -525,6 +564,9 @@ export class DashboardPageComponent implements OnInit {
 
   // Forms
   clienteForm = { email: '', documentoIdentificacion: '' };
+  searchEmail = '';
+  searchDocumento = '';
+  hasSearched = false;
   mascotaForm = { nombre: '', especie: '', raza: '', duenoId: 0, historialMedico: '' };
   citaForm = { mascotaId: 0, fecha: '', hora: '08:00', motivo: '', estado: 'Pendiente' };
 
@@ -536,21 +578,39 @@ export class DashboardPageComponent implements OnInit {
   successMessage = '';
 
   ngOnInit() {
+    this.userRole = localStorage.getItem('user_role') || '';
     this.loadAll();
   }
 
   loadAll() {
-    this.loadClientes();
     this.loadMascotas();
     this.loadCitas();
   }
 
   loadClientes() {
+    const email = this.searchEmail.trim();
+    const documento = this.searchDocumento.trim();
+
+    // Sin criterios → no llamar a la API, mostrar estado inicial vacío
+    if (!email && !documento) {
+      this.clientes = [];
+      this.hasSearched = false;
+      this.loadingClientes = false;
+      this.errorClientes = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.loadingClientes = true;
     this.errorClientes = '';
+    this.hasSearched = true;
     this.cdr.markForCheck();
 
-    this.clienteService.getAll()
+    const filters: { email?: string; documento?: string } = {};
+    if (email) filters.email = email;
+    if (documento) filters.documento = documento;
+
+    this.clienteService.getAll(filters)
       .pipe(finalize(() => {
         this.loadingClientes = false;
         this.cdr.markForCheck();
@@ -558,35 +618,45 @@ export class DashboardPageComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.clientes = data;
+          this.mascotas = this.clientes.flatMap((c: any) => c.mascotas || []);
           this.cdr.markForCheck();
         },
         error: (e) => {
-          this.errorClientes = 'Error al cargar clientes: ' + (e.error?.message || e.message);
+          this.errorClientes = 'Error al buscar clientes: ' + (e.error?.message || e.message);
           this.cdr.markForCheck();
         }
       });
   }
 
+  searchClientes() {
+    if (!this.searchEmail.trim() && !this.searchDocumento.trim()) {
+      this.errorClientes = 'Ingrese al menos un criterio de búsqueda: correo electrónico o número de identificación.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.errorClientes = '';
+    this.loadClientes();
+  }
+
+  clearSearch() {
+    this.searchEmail = '';
+    this.searchDocumento = '';
+    this.clientes = [];
+    this.mascotas = [];
+    this.hasSearched = false;
+    this.errorClientes = '';
+    this.cdr.markForCheck();
+  }
+
   loadMascotas() {
-    this.loadingMascotas = true;
+    // Ya no pedimos todos los registros a la API.
+    // La lista se construye a partir de this.clientes.
+    if (this.clientes) {
+      this.mascotas = this.clientes.flatMap((c: any) => c.mascotas || []);
+    }
+    this.loadingMascotas = false;
     this.errorMascotas = '';
     this.cdr.markForCheck();
-
-    this.mascotaService.getAll()
-      .pipe(finalize(() => {
-        this.loadingMascotas = false;
-        this.cdr.markForCheck();
-      }))
-      .subscribe({
-        next: (data) => {
-          this.mascotas = data;
-          this.cdr.markForCheck();
-        },
-        error: (e) => {
-          this.errorMascotas = 'Error al cargar mascotas: ' + (e.error?.message || e.message);
-          this.cdr.markForCheck();
-        }
-      });
   }
 
   loadCitas() {

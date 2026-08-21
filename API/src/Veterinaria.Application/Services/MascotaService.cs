@@ -18,9 +18,9 @@ public class MascotaService : IMascotaService
         _mascotaRepository = mascotaRepository;
     }
 
-    public async Task<IEnumerable<MascotaResponseDto>> ObtenerTodasAsync()
+    public async Task<IEnumerable<MascotaResponseDto>> ObtenerTodasAsync(int? veterinarioId = null)
     {
-        var mascotas = await _mascotaRepository.ObtenerTodasAsync();
+        var mascotas = await _mascotaRepository.ObtenerTodasAsync(veterinarioId);
         return mascotas.Select(MapToDto);
     }
 

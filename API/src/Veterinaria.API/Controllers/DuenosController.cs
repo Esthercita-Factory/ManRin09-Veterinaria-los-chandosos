@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Application.DTOs;
 using Veterinaria.Application.Interfaces;
+using System.Security.Claims;
 
 namespace Veterinaria.API.Controllers;
 
@@ -20,16 +22,54 @@ public class DuenosController : ControllerBase
         _duenoService = duenoService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<DuenoResponseDto>>> Get()
+    private int? GetVeterinarioId()
     {
-        return Ok(await _duenoService.ObtenerTodosAsync());
+        var rol = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("rol")?.Value;
+        if (rol == "Veterinario")
+        {
+            var userIdStr = User.FindFirst("usuarioId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdStr, out var userId))
+                return userId;
+        }
+        return null;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<DuenoResponseDto>>> Get(
+        [FromQuery] string? email = null,
+        [FromQuery] string? documento = null)
+    {
+        var rol = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("rol")?.Value;
+
+        // Si el usuario es dueño, solo devuelve su propio perfil (búsqueda por su propio ID)
+        if (rol == "Dueno")
+        {
+            var userIdStr = User.FindFirst("usuarioId")?.Value;
+            if (int.TryParse(userIdStr, out var duenoId))
+            {
+                var dueno = await _duenoService.ObtenerPorIdAsync(duenoId);
+                return Ok(dueno != null ? new[] { dueno } : Array.Empty<DuenoResponseDto>());
+            }
+            return Ok(Array.Empty<DuenoResponseDto>());
+        }
+
+        // Para veterinarios: al menos un criterio de búsqueda es OBLIGATORIO
+        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(documento))
+        {
+            return BadRequest(new { message = "Debe proporcionar al menos un criterio de búsqueda: email o documento de identificación." });
+        }
+
+        var veterinarioId = GetVeterinarioId();
+        var duenos = await _duenoService.BuscarAsync(veterinarioId, email, documento);
+        
+        return Ok(duenos);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<DuenoResponseDto>> Get(int id)
     {
-        var dueno = await _duenoService.ObtenerPorIdAsync(id);
+        var veterinarioId = GetVeterinarioId();
+        var dueno = await _duenoService.ObtenerPorIdAsync(id, veterinarioId);
         if (dueno == null) return NotFound();
         return Ok(dueno);
     }
@@ -39,7 +79,8 @@ public class DuenosController : ControllerBase
     {
         try
         {
-            var result = await _duenoService.CrearAsync(dto);
+            var veterinarioId = GetVeterinarioId();
+            var result = await _duenoService.CrearAsync(dto, veterinarioId);
             return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
         }
         catch (InvalidOperationException ex)
@@ -51,14 +92,16 @@ public class DuenosController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] ActualizarDuenoDto dto)
     {
-        await _duenoService.ActualizarAsync(id, dto);
+        var veterinarioId = GetVeterinarioId();
+        await _duenoService.ActualizarAsync(id, dto, veterinarioId);
         return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _duenoService.EliminarAsync(id);
+        var veterinarioId = GetVeterinarioId();
+        await _duenoService.EliminarAsync(id, veterinarioId);
         return NoContent();
     }
 }

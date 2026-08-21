@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Application.DTOs;
 using Veterinaria.Application.Interfaces;
 
+using System.Security.Claims;
+
 namespace Veterinaria.API.Controllers;
 
 [ApiController]
@@ -19,10 +21,23 @@ public class MascotasController : ControllerBase
         _mascotaService = mascotaService;
     }
 
+    private int? GetVeterinarioId()
+    {
+        var rol = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("rol")?.Value;
+        if (rol == "Veterinario")
+        {
+            var userIdStr = User.FindFirst("usuarioId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdStr, out var userId))
+                return userId;
+        }
+        return null;
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MascotaResponseDto>>> Get()
     {
-        return Ok(await _mascotaService.ObtenerTodasAsync());
+        var veterinarioId = GetVeterinarioId();
+        return Ok(await _mascotaService.ObtenerTodasAsync(veterinarioId));
     }
 
     [HttpGet("dueno/{duenoId}")]

@@ -13,9 +13,14 @@ public class MascotaRepository : IMascotaRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Mascota>> ObtenerTodasAsync()
+    public async Task<IEnumerable<Mascota>> ObtenerTodasAsync(int? veterinarioId = null)
     {
-        return await _context.Mascotas.ToListAsync();
+        var query = _context.Mascotas.Include(m => m.Dueno).AsQueryable();
+        if (veterinarioId.HasValue)
+        {
+            query = query.Where(m => m.Dueno != null && m.Dueno.VeterinarioId == veterinarioId.Value);
+        }
+        return await query.ToListAsync();
     }
 
     public async Task<IEnumerable<Mascota>> ObtenerPorDuenoIdAsync(int duenoId)

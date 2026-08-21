@@ -4,7 +4,7 @@ namespace Veterinaria.Domain.Interfaces;
 
 public interface IMascotaRepository
 {
-    Task<IEnumerable<Mascota>> ObtenerTodasAsync();
+    Task<IEnumerable<Mascota>> ObtenerTodasAsync(int? veterinarioId = null);
     Task<IEnumerable<Mascota>> ObtenerPorDuenoIdAsync(int duenoId);
     Task<Mascota?> ObtenerPorIdAsync(int id);
     Task GuardarAsync(Mascota mascota);
