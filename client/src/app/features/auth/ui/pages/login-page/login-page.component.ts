@@ -46,7 +46,13 @@ export class LoginPageComponent {
         }
       },
       error: (err: any) => {
-        this.errorMessage = err.error?.message || 'Credenciales inválidas o error de conexión.';
+        if (err.status === 401) {
+          this.errorMessage = 'Credenciales inválidas.';
+        } else if (err.status === 409) {
+          this.errorMessage = 'El usuario ya existe. Por favor, inicie sesión.';
+        } else {
+          this.errorMessage = err.error?.message || 'Error de conexión.';
+        }
       }
     });
   }
