@@ -146,19 +146,20 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
               <div class="flex flex-col sm:flex-row gap-3 items-end">
                 <div class="flex-1">
                   <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Correo Electrónico</label>
-                  <input [(ngModel)]="searchEmail" type="email" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por email..." (keyup.enter)="searchClientes()" />
+                  <input [(ngModel)]="searchEmail" type="email" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por email..." (keyup.enter)="buscarCliente()" />
                 </div>
                 <div class="flex-1">
                   <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nº Identificación</label>
-                  <input [(ngModel)]="searchDocumento" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por documento..." (keyup.enter)="searchClientes()" />
+                  <input [(ngModel)]="searchDocumento" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Buscar por documento..." (keyup.enter)="buscarCliente()" />
                 </div>
                 <div class="flex gap-2 shrink-0">
-                  <button (click)="searchClientes()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm flex items-center gap-1.5">
+                  <!-- Botón Buscar: llama SOLO a buscarCliente() → GET /api/duenos -->
+                  <button (click)="buscarCliente()" type="button" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Buscar
                   </button>
                   @if (searchEmail || searchDocumento) {
-                    <button (click)="clearSearch()" class="border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">
+                    <button (click)="clearSearch()" type="button" class="border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                       Limpiar
                     </button>
@@ -166,6 +167,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                 </div>
               </div>
             </div>
+
             
             @if (errorClientes) { 
               <div class="bg-red-50 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">{{ errorClientes }}</div> 
@@ -587,34 +589,29 @@ export class DashboardPageComponent implements OnInit {
     this.loadCitas();
   }
 
-  loadClientes() {
-    const email = this.searchEmail.trim();
+  // ── BÚSQUEDA DE CLIENTES: HTTP GET ───────────────────────────────────────
+  // Este método es el único punto de entrada para buscar clientes.
+  // Llama EXCLUSIVAMENTE a clienteService.buscar() que hace GET /api/duenos?email=...&documento=...
+  // NO abre ningún modal, NO hace POST, NO interactúa con clienteForm ni saveCliente().
+  buscarCliente() {
+    const email     = this.searchEmail.trim();
     const documento = this.searchDocumento.trim();
 
-    // Sin criterios → no llamar a la API, mostrar estado inicial vacío
     if (!email && !documento) {
-      this.clientes = [];
-      this.hasSearched = false;
-      this.loadingClientes = false;
-      this.errorClientes = '';
+      this.errorClientes = 'Ingrese al menos un criterio: correo electrónico o número de identificación.';
       this.cdr.markForCheck();
       return;
     }
 
-    this.loadingClientes = true;
-    this.errorClientes = '';
-    this.hasSearched = true;
+    this.errorClientes    = '';
+    this.loadingClientes  = true;
+    this.hasSearched      = true;
+    this.clientes         = [];
     this.cdr.markForCheck();
 
-    const filters: { email?: string; documento?: string } = {};
-    if (email) filters.email = email;
-    if (documento) filters.documento = documento;
-
-    this.clienteService.getAll(filters)
-      .pipe(finalize(() => {
-        this.loadingClientes = false;
-        this.cdr.markForCheck();
-      }))
+    // clienteService.buscar() → HTTP GET /api/duenos con HttpParams
+    this.clienteService.buscar(email, documento)
+      .pipe(finalize(() => { this.loadingClientes = false; this.cdr.markForCheck(); }))
       .subscribe({
         next: (data) => {
           this.clientes = data;
@@ -628,25 +625,22 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
-  searchClientes() {
-    if (!this.searchEmail.trim() && !this.searchDocumento.trim()) {
-      this.errorClientes = 'Ingrese al menos un criterio de búsqueda: correo electrónico o número de identificación.';
-      this.cdr.markForCheck();
-      return;
-    }
-    this.errorClientes = '';
-    this.loadClientes();
+  // Alias interno usado por deleteCliente/saveMascota para recargar tras mutaciones
+  loadClientes() {
+    if (!this.hasSearched) return;
+    this.buscarCliente();
   }
 
   clearSearch() {
-    this.searchEmail = '';
+    this.searchEmail    = '';
     this.searchDocumento = '';
-    this.clientes = [];
-    this.mascotas = [];
-    this.hasSearched = false;
-    this.errorClientes = '';
+    this.clientes       = [];
+    this.mascotas       = [];
+    this.hasSearched    = false;
+    this.errorClientes  = '';
     this.cdr.markForCheck();
   }
+
 
   loadMascotas() {
     // Ya no pedimos todos los registros a la API.

@@ -11,9 +11,19 @@ export class ClienteService {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` });
   }
 
+  // ── BÚSQUEDA: HTTP GET con query params ──────────────────────────────────
+  // Este método NUNCA hace POST. Sólo lee datos filtrando por email y/o documento.
+  buscar(email: string, documento: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (email.trim())     params = params.set('email',     email.trim());
+    if (documento.trim()) params = params.set('documento', documento.trim());
+    return this.http.get<any[]>(`${this.apiUrl}/duenos`, { headers: this.headers(), params });
+  }
+
+  // ── LECTURA GENÉRICA (usada internamente) ─────────────────────────────────
   getAll(filters?: { email?: string; documento?: string }): Observable<any[]> {
     let params = new HttpParams();
-    if (filters?.email) params = params.set('email', filters.email);
+    if (filters?.email)     params = params.set('email',     filters.email);
     if (filters?.documento) params = params.set('documento', filters.documento);
     return this.http.get<any[]>(`${this.apiUrl}/duenos`, { headers: this.headers(), params });
   }
@@ -22,6 +32,7 @@ export class ClienteService {
     return this.http.get<any>(`${this.apiUrl}/duenos/${id}`, { headers: this.headers() });
   }
 
+  // ── CREACIÓN: HTTP POST — sólo lo llama saveCliente() desde el modal ──────
   create(data: { email: string; documentoIdentificacion: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/duenos`, data, { headers: this.headers() });
   }
