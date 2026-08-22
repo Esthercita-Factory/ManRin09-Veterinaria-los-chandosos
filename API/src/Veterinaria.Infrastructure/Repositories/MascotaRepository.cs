@@ -18,7 +18,7 @@ public class MascotaRepository : IMascotaRepository
         var query = _context.Mascotas.Include(m => m.Dueno).AsQueryable();
         if (veterinarioId.HasValue)
         {
-            query = query.Where(m => m.Dueno != null && m.Dueno.VeterinarioId == veterinarioId.Value);
+            query = query.Where(m => m.Dueno != null && m.Dueno.Veterinarios.Any(v => v.Id == veterinarioId.Value));
         }
         return await query.ToListAsync();
     }

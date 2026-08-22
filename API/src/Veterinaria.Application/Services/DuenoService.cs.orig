@@ -12,12 +12,10 @@ namespace Veterinaria.Application.Services;
 public class DuenoService : IDuenoService
 {
     private readonly IDuenoRepository _duenoRepository;
-    private readonly IVeterinarioRepository _veterinarioRepository;
 
-    public DuenoService(IDuenoRepository duenoRepository, IVeterinarioRepository veterinarioRepository)
+    public DuenoService(IDuenoRepository duenoRepository)
     {
         _duenoRepository = duenoRepository;
-        _veterinarioRepository = veterinarioRepository;
     }
 
     public async Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto, int? veterinarioId = null)
@@ -28,7 +26,10 @@ public class DuenoService : IDuenoService
         if (existente != null)
             throw new InvalidOperationException("El correo electrónico ya se encuentra registrado.");
 
+        // Nombre provisional: prefijo del email con primera letra en mayúscula
         var nombreProvisional = char.ToUpper(email[0]) + email.Substring(1, email.IndexOf('@') - 1);
+
+        // Contraseña temporal aleatoria segura (16 chars), el dueño la cambiará luego
         var tempPassword = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
 
@@ -38,17 +39,9 @@ public class DuenoService : IDuenoService
             Email = email,
             DocumentoIdentificacion = dto.DocumentoIdentificacion.Trim(),
             Telefono = string.Empty,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            VeterinarioId = veterinarioId
         };
-        
-        if (veterinarioId.HasValue)
-        {
-            var vet = await _veterinarioRepository.ObtenerPorIdAsync(veterinarioId.Value);
-            if (vet != null)
-            {
-                nuevoDueno.Veterinarios.Add(vet);
-            }
-        }
 
         await _duenoRepository.GuardarAsync(nuevoDueno);
 
@@ -57,7 +50,7 @@ public class DuenoService : IDuenoService
             Id = nuevoDueno.Id,
             Nombre = nuevoDueno.Nombre,
             Email = nuevoDueno.Email,
-            VeterinarioIds = nuevoDueno.Veterinarios.Select(v => v.Id).ToList(),
+            VeterinarioId = nuevoDueno.VeterinarioId,
             DocumentoIdentificacion = nuevoDueno.DocumentoIdentificacion,
             Telefono = nuevoDueno.Telefono
         };
@@ -73,7 +66,7 @@ public class DuenoService : IDuenoService
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
             Email = d.Email,
-            VeterinarioIds = d.Veterinarios.Select(v => v.Id).ToList(),
+            VeterinarioId = d.VeterinarioId,
             Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
             {
                 Id = m.Id,
@@ -97,7 +90,7 @@ public class DuenoService : IDuenoService
             DocumentoIdentificacion = d.DocumentoIdentificacion,
             Telefono = d.Telefono,
             Email = d.Email,
-            VeterinarioIds = d.Veterinarios.Select(v => v.Id).ToList(),
+            VeterinarioId = d.VeterinarioId,
             Mascotas = d.Mascotas?.Select(m => new MascotaResponseDto 
             {
                 Id = m.Id,
@@ -129,32 +122,5 @@ public class DuenoService : IDuenoService
         if (d == null) throw new InvalidOperationException("Dueño no encontrado.");
         
         await _duenoRepository.EliminarAsync(d);
-    }
-
-    public async Task AsociarAVeterinariaAsync(int clienteId, int veterinarioId)
-    {
-        var d = await _duenoRepository.ObtenerPorIdAsync(clienteId);
-        if (d == null) throw new InvalidOperationException("Dueño no encontrado.");
-        
-        if (d.Veterinarios.Any(v => v.Id == veterinarioId)) 
-            throw new InvalidOperationException("El cliente ya está asociado a esta veterinaria.");
-            
-        var vet = await _veterinarioRepository.ObtenerPorIdAsync(veterinarioId);
-        if (vet == null) throw new InvalidOperationException("Veterinario no encontrado.");
-        
-        d.Veterinarios.Add(vet);
-        await _duenoRepository.ActualizarAsync(d);
-    }
-
-    public async Task DesasociarDeVeterinariaAsync(int clienteId, int veterinarioId)
-    {
-        var d = await _duenoRepository.ObtenerPorIdAsync(clienteId);
-        if (d == null) throw new InvalidOperationException("Dueño no encontrado.");
-        
-        var vet = d.Veterinarios.FirstOrDefault(v => v.Id == veterinarioId);
-        if (vet == null) throw new InvalidOperationException("El cliente no está asociado a esta veterinaria.");
-        
-        d.Veterinarios.Remove(vet);
-        await _duenoRepository.ActualizarAsync(d);
     }
 }

@@ -138,7 +138,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
           @if (activeTab === 'clientes') {
             <div class="flex items-center justify-between mb-6">
               <h1 class="text-3xl font-extrabold text-[#233124] tracking-tight">Clientes</h1>
-              <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nuevo Cliente</button>
+              
             </div>
 
             <!-- Barra de búsqueda por filtros -->
@@ -199,10 +199,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                 </div>
                 <h3 class="text-lg font-bold text-gray-800 mb-1">No se encontró ningún cliente</h3>
                 <p class="text-gray-500 text-sm mb-6 max-w-sm">No existe un cliente con los datos proporcionados. Verifique la información o registre un nuevo cliente.</p>
-                <button (click)="openClienteModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition shadow-sm flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                  Registrar nuevo cliente
-                </button>
+                
               </div>
             } @else {
               <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
@@ -230,8 +227,14 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                           </span>
                         </td>
                         <td class="py-3 px-4 flex gap-2">
-                          <button (click)="openClienteModal(c)" class="text-xs bg-[#89A88C]/15 text-[#3B5A45] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#89A88C]/30 transition">Editar</button>
-                          <button (click)="deleteCliente(c.id)" class="text-xs bg-red-50 text-red-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">Eliminar</button>
+                          @if (!c.veterinarioIds?.includes(userId)) {
+                            <!-- Botón Guardar (asociar) -->
+                            <button (click)="asociarCliente(c.id)" class="text-blue-600 hover:text-blue-900 font-medium bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition">Guardar</button>
+                          } @else {
+                            <!-- Botones si ya está asociado -->
+                            <button (click)="openMascotaModal({ duenoId: c.id })" class="text-green-600 hover:text-green-900 font-medium bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md transition">+ Mascota</button>
+                            <button (click)="eliminarCliente(c.id)" class="text-red-600 hover:text-red-900 font-medium bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition">Eliminar</button>
+                          }
                         </td>
                       </tr>
                     }
@@ -375,32 +378,6 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
       }
 
       <!-- ===== MODAL: CLIENTE ===== -->
-      @if (showClienteModal) {
-        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" (click)="showClienteModal=false">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" (click)="$event.stopPropagation()">
-            <h2 class="text-xl font-bold text-gray-900 mb-5">{{ editingCliente?.id ? 'Editar Cliente' : 'Nuevo Cliente' }}</h2>
-            @if (modalError) { <div class="bg-red-50 text-red-600 rounded-lg px-3 py-2 mb-4 text-sm">{{ modalError }}</div> }
-            <div class="space-y-3">
-              <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Correo Electrónico</label>
-                <input [(ngModel)]="clienteForm.email" type="email" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="correo@ejemplo.com">
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Número de Identificación</label>
-                <input [(ngModel)]="clienteForm.documentoIdentificacion" type="text" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" placeholder="Ej. 123456789">
-              </div>
-            </div>
-            <div class="flex gap-3 mt-6">
-              <button (click)="showClienteModal=false" class="flex-1 border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-50 transition">Cancelar</button>
-              <button (click)="saveCliente()" [disabled]="savingCliente || !clienteForm.email || !clienteForm.documentoIdentificacion" class="flex-1 bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold py-2.5 rounded-xl text-sm transition disabled:opacity-60">
-                {{ savingCliente ? 'Guardando...' : 'Guardar' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- ===== MODAL: MASCOTA ===== -->
       @if (showMascotaModal) {
         <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" (click)="showMascotaModal=false">
           <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" (click)="$event.stopPropagation()">
@@ -534,6 +511,7 @@ export class DashboardPageComponent implements OnInit {
 
   // Data
   clientes: any[] = [];
+  misClientes: any[] = [];
   mascotas: any[] = [];
   citas: any[] = [];
 
@@ -585,8 +563,30 @@ export class DashboardPageComponent implements OnInit {
   }
 
   loadAll() {
-    this.loadMascotas();
+    this.loadMisClientes();
     this.loadCitas();
+  }
+
+  loadMisClientes() {
+    if (!this.userId) return;
+    this.loadingClientes = true;
+    this.errorClientes = '';
+    this.clienteService.obtenerMisClientes(this.userId)
+      .pipe(finalize(() => { this.loadingClientes = false; this.cdr.markForCheck(); }))
+      .subscribe({
+        next: (data) => {
+          this.misClientes = data;
+          if (!this.hasSearched) {
+            this.clientes = data;
+            this.loadMascotas();
+          }
+          this.cdr.markForCheck();
+        },
+        error: (e) => {
+          this.errorClientes = 'Error al cargar mis clientes: ' + (e.error?.message || e.message);
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   // ── BÚSQUEDA DE CLIENTES: HTTP GET ───────────────────────────────────────
@@ -609,13 +609,12 @@ export class DashboardPageComponent implements OnInit {
     this.clientes         = [];
     this.cdr.markForCheck();
 
-    // clienteService.buscar() → HTTP GET /api/duenos con HttpParams
     this.clienteService.buscar(email, documento)
       .pipe(finalize(() => { this.loadingClientes = false; this.cdr.markForCheck(); }))
       .subscribe({
         next: (data) => {
           this.clientes = data;
-          this.mascotas = this.clientes.flatMap((c: any) => c.mascotas || []);
+          this.loadMascotas();
           this.cdr.markForCheck();
         },
         error: (e) => {
@@ -625,19 +624,83 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
+  asociarCliente(duenoId: number) {
+    if (!this.userId) return;
+    this.clienteService.asociar(this.userId, duenoId).subscribe({
+      next: () => {
+        this.showSuccessAlert('Cliente asociado correctamente');
+        // Actualización in-place reactiva para UI en tiempo real
+        const index = this.clientes.findIndex(c => c.id === duenoId);
+        if (index !== -1) {
+          const updatedClient = { ...this.clientes[index], veterinarioIds: [...(this.clientes[index].veterinarioIds || []), this.userId] };
+          this.clientes = [
+            ...this.clientes.slice(0, index),
+            updatedClient,
+            ...this.clientes.slice(index + 1)
+          ];
+          // Recalcular mascotas de inmediato
+          this.mascotas = this.clientes.flatMap((c: any) => c.mascotas || []);
+        }
+        this.loadMisClientes(); // Sincroniza estado real con backend
+        this.cdr.markForCheck();
+      },
+      error: (e) => {
+        this.errorClientes = 'Error al asociar cliente: ' + (e.error?.message || e.message);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  eliminarCliente(duenoId: number) {
+    if (!this.userId) return;
+    if (!confirm('¿Seguro que desea desasociar a este cliente?')) return;
+    
+    this.clienteService.desasociar(this.userId, duenoId).subscribe({
+      next: () => {
+        this.showSuccessAlert('Cliente desasociado correctamente');
+        // Si estamos en resultados de búsqueda, actualizamos in-place. Si estamos en "mis clientes", lo removemos.
+        if (this.hasSearched) {
+          const index = this.clientes.findIndex(c => c.id === duenoId);
+          if (index !== -1) {
+            const updatedClient = { ...this.clientes[index], veterinarioIds: (this.clientes[index].veterinarioIds || []).filter((id: any) => id !== this.userId) };
+            this.clientes = [
+              ...this.clientes.slice(0, index),
+              updatedClient,
+              ...this.clientes.slice(index + 1)
+            ];
+          }
+        } else {
+          this.clientes = this.clientes.filter(c => c.id !== duenoId);
+        }
+        
+        // Recalcular mascotas de inmediato para que desaparezcan
+        this.mascotas = this.clientes.flatMap((c: any) => c.mascotas || []);
+        
+        this.loadMisClientes(); // Sincroniza estado real con backend
+        this.cdr.markForCheck();
+      },
+      error: (e) => {
+        this.errorClientes = 'Error al desasociar cliente: ' + (e.error?.message || e.message);
+        this.cdr.markForCheck();
+      }
+    });
+  }
   // Alias interno usado por deleteCliente/saveMascota para recargar tras mutaciones
   loadClientes() {
-    if (!this.hasSearched) return;
-    this.buscarCliente();
+    if (this.hasSearched) {
+      this.buscarCliente();
+    } else {
+      this.loadMisClientes();
+    }
   }
 
   clearSearch() {
     this.searchEmail    = '';
     this.searchDocumento = '';
-    this.clientes       = [];
-    this.mascotas       = [];
     this.hasSearched    = false;
     this.errorClientes  = '';
+    this.clientes       = this.misClientes;
+    this.loadMascotas();
     this.cdr.markForCheck();
   }
 
@@ -708,48 +771,6 @@ export class DashboardPageComponent implements OnInit {
       case 'Completada': return 'bg-blue-100 text-blue-700';
       default: return 'bg-gray-100 text-gray-600';
     }
-  }
-
-  // Cliente CRUD
-  openClienteModal(c?: any) {
-    this.editingCliente = c || null;
-    this.modalError = '';
-    this.clienteForm = c
-      ? { email: c.email, documentoIdentificacion: c.documentoIdentificacion || '' }
-      : { email: '', documentoIdentificacion: '' };
-    this.showClienteModal = true;
-  }
-
-  saveCliente() {
-    this.savingCliente = true;
-    this.modalError = '';
-
-    const obs = this.editingCliente?.id
-      // Edición: PUT acepta ActualizarDuenoDto — mandamos lo que tenemos
-      ? this.clienteService.update(this.editingCliente.id, {
-          email: this.clienteForm.email,
-          documentoIdentificacion: this.clienteForm.documentoIdentificacion,
-          nombre: this.editingCliente.nombre ?? '',
-          telefono: this.editingCliente.telefono ?? ''
-        })
-      // Creación: POST solo necesita email y documento
-      : this.clienteService.create({
-          email: this.clienteForm.email,
-          documentoIdentificacion: this.clienteForm.documentoIdentificacion
-        });
-
-    obs.subscribe({
-      next: () => { this.showClienteModal = false; this.savingCliente = false; this.loadClientes(); this.showSuccessAlert('Cliente guardado exitosamente.'); },
-      error: (e) => { this.modalError = e.error?.message || 'Error al guardar.'; this.savingCliente = false; }
-    });
-  }
-
-  deleteCliente(id: number) {
-    if (!confirm('¿Eliminar este cliente?')) return;
-    this.clienteService.delete(id).subscribe({
-      next: () => this.loadClientes(),
-      error: (e) => this.errorClientes = e.error?.message || 'Error al eliminar.'
-    });
   }
 
   // Mascota CRUD

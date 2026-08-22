@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LoginFormComponent } from '../../components/login-form/login-form.component';
-import { AuthService } from '../../../../../core/services/auth.service';
+import { LoginUseCase } from '../../../application/use-cases/login.usecase';
 
 @Component({
   selector: 'app-login-page',
@@ -29,7 +29,7 @@ import { AuthService } from '../../../../../core/services/auth.service';
   styles: []
 })
 export class LoginPageComponent {
-  private authService = inject(AuthService);
+  private loginUseCase = inject(LoginUseCase);
   private router = inject(Router);
   
   errorMessage: string | null = null;
@@ -37,7 +37,7 @@ export class LoginPageComponent {
   onLoginSubmit(credentials: any) {
     this.errorMessage = null;
     
-    this.authService.login(credentials).subscribe({
+    this.loginUseCase.execute(credentials).subscribe({
       next: (res: any) => {
         if (res.rol === 'Veterinario') {
           this.router.navigate(['/dashboard']);

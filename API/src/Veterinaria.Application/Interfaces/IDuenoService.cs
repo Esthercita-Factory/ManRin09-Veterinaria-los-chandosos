@@ -11,4 +11,6 @@ public interface IDuenoService
     Task<DuenoResponseDto> CrearAsync(CrearDuenoDto dto, int? veterinarioId = null);
     Task ActualizarAsync(int id, ActualizarDuenoDto dto, int? veterinarioId = null);
     Task EliminarAsync(int id, int? veterinarioId = null);
+    Task AsociarAVeterinariaAsync(int clienteId, int veterinarioId);
+    Task DesasociarDeVeterinariaAsync(int clienteId, int veterinarioId);
 }

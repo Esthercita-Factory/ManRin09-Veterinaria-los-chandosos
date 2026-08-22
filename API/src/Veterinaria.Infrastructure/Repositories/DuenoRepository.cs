@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Veterinaria.Domain.Entities;
@@ -19,51 +21,48 @@ namespace Veterinaria.Infrastructure.Repositories
         public async Task<Dueno?> ObtenerPorEmailAsync(string email)
         {
             return await _context.Duenos
+                .Include(d => d.Veterinarios)
                 .FirstOrDefaultAsync(d => d.Email.ToLower() == email.ToLower());
         }
 
         public async Task<Dueno?> ObtenerPorIdAsync(int id, int? veterinarioId = null)
         {
-            var query = _context.Duenos.Include(d => d.Mascotas).AsQueryable();
+            var query = _context.Duenos
+                .Include(d => d.Mascotas)
+                .Include(d => d.Veterinarios)
+                .AsQueryable();
+                
             if (veterinarioId.HasValue)
-                query = query.Where(d => d.VeterinarioId == veterinarioId.Value || d.VeterinarioId == null);
+                query = query.Where(d => d.Veterinarios.Any(v => v.Id == veterinarioId.Value) || !d.Veterinarios.Any());
                 
             return await query.FirstOrDefaultAsync(d => d.Id == id);
         }
 
-        /// <summary>
-        /// Búsqueda puntual de dueños. Si no se proporciona al menos un criterio
-        /// de búsqueda (email o documento), retorna una colección vacía.
-        /// Jamás ejecuta un SELECT * sin filtros contra la tabla Duenos.
-        /// </summary>
         public async Task<IEnumerable<Dueno>> BuscarAsync(int? veterinarioId = null, string? email = null, string? documento = null)
         {
-            // GUARD: Sin criterios de búsqueda → colección vacía. No se toca la BD.
-            if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(documento))
+            if (veterinarioId == null && string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(documento))
                 return Enumerable.Empty<Dueno>();
 
-            var query = _context.Duenos.Include(d => d.Mascotas).AsQueryable();
+            var query = _context.Duenos
+                .Include(d => d.Mascotas)
+                .Include(d => d.Veterinarios)
+                .AsQueryable();
 
-            // Scope de seguridad: solo dueños del veterinario o sin asignar
             if (veterinarioId.HasValue)
-                query = query.Where(d => d.VeterinarioId == veterinarioId.Value || d.VeterinarioId == null);
+                query = query.Where(d => d.Veterinarios.Any(v => v.Id == veterinarioId.Value)); // Get ONLY the vet's clients if searching for mis clientes
 
-            // Filtro estricto: coincidencia exacta por email O por documento
             var emailNorm = email?.Trim().ToLowerInvariant();
             var docNorm = documento?.Trim().ToLowerInvariant();
 
             if (!string.IsNullOrWhiteSpace(emailNorm) && !string.IsNullOrWhiteSpace(docNorm))
             {
-                // Ambos criterios: OR lógico — encuentra al cliente por cualquiera de sus identificadores
-                query = query.Where(d =>
-                    d.Email.ToLower() == emailNorm ||
-                    d.DocumentoIdentificacion.ToLower() == docNorm);
+                query = query.Where(d => d.Email.ToLower() == emailNorm || d.DocumentoIdentificacion.ToLower() == docNorm);
             }
             else if (!string.IsNullOrWhiteSpace(emailNorm))
             {
                 query = query.Where(d => d.Email.ToLower() == emailNorm);
             }
-            else // docNorm tiene valor (ya validamos arriba que al menos uno no es vacío)
+            else if (!string.IsNullOrWhiteSpace(docNorm))
             {
                 query = query.Where(d => d.DocumentoIdentificacion.ToLower() == docNorm);
             }

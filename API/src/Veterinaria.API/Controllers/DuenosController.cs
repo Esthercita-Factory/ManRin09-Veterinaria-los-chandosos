@@ -59,8 +59,9 @@ public class DuenosController : ControllerBase
             return BadRequest(new { message = "Debe proporcionar al menos un criterio de búsqueda: email o documento de identificación." });
         }
 
-        var veterinarioId = GetVeterinarioId();
-        var duenos = await _duenoService.BuscarAsync(veterinarioId, email, documento);
+        // Búsqueda global: NO filtrar por veterinarioId.
+        // El frontend usa el arreglo veterinarioIds para mostrar "Guardar" o "Eliminar".
+        var duenos = await _duenoService.BuscarAsync(null, email, documento);
         
         return Ok(duenos);
     }

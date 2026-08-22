@@ -9,8 +9,7 @@ public class Dueno
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     
-    public int? VeterinarioId { get; set; }
-    public Veterinario? Veterinario { get; set; }
+    public ICollection<Veterinario> Veterinarios { get; set; } = new List<Veterinario>();
 
     public ICollection<Mascota> Mascotas { get; set; } = new List<Mascota>();
 }

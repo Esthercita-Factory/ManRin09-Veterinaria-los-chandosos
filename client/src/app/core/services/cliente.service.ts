@@ -12,7 +12,6 @@ export class ClienteService {
   }
 
   // ── BÚSQUEDA: HTTP GET con query params ──────────────────────────────────
-  // Este método NUNCA hace POST. Sólo lee datos filtrando por email y/o documento.
   buscar(email: string, documento: string): Observable<any[]> {
     let params = new HttpParams();
     if (email.trim())     params = params.set('email',     email.trim());
@@ -20,7 +19,21 @@ export class ClienteService {
     return this.http.get<any[]>(`${this.apiUrl}/duenos`, { headers: this.headers(), params });
   }
 
-  // ── LECTURA GENÉRICA (usada internamente) ─────────────────────────────────
+  // ── MIS CLIENTES (Veterinario) ─────────────────────────────────
+  obtenerMisClientes(veterinarioId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/veterinarios/${veterinarioId}/clientes`, { headers: this.headers() });
+  }
+
+  // ── ASOCIAR / DESASOCIAR A VETERINARIA ─────────────────────────────────
+  asociar(veterinarioId: number, duenoId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/veterinarios/${veterinarioId}/asociar-cliente/${duenoId}`, {}, { headers: this.headers() });
+  }
+
+  desasociar(veterinarioId: number, duenoId: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/veterinarios/${veterinarioId}/asociar-cliente/${duenoId}`, { headers: this.headers() });
+  }
+
+  // ── LECTURA GENÉRICA ─────────────────────────────────
   getAll(filters?: { email?: string; documento?: string }): Observable<any[]> {
     let params = new HttpParams();
     if (filters?.email)     params = params.set('email',     filters.email);
@@ -30,11 +43,6 @@ export class ClienteService {
 
   getById(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/duenos/${id}`, { headers: this.headers() });
-  }
-
-  // ── CREACIÓN: HTTP POST — sólo lo llama saveCliente() desde el modal ──────
-  create(data: { email: string; documentoIdentificacion: string }): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/duenos`, data, { headers: this.headers() });
   }
 
   update(id: number, data: any): Observable<any> {
