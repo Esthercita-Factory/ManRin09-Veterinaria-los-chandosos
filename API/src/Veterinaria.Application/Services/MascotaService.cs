@@ -79,6 +79,6 @@ public class MascotaService : IMascotaService
         Especie = m.Especie,
         Raza = m.Raza,
         HistorialMedico = m.HistorialMedico,
-        DuenoId = m.DuenoId
+        NombreDueno = m.Dueno?.Nombre ?? string.Empty
     };
 }

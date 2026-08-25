@@ -25,12 +25,12 @@ public class MascotaRepository : IMascotaRepository
 
     public async Task<IEnumerable<Mascota>> ObtenerPorDuenoIdAsync(int duenoId)
     {
-        return await _context.Mascotas.Where(m => m.DuenoId == duenoId).ToListAsync();
+        return await _context.Mascotas.Include(m => m.Dueno).Where(m => m.DuenoId == duenoId).ToListAsync();
     }
 
     public async Task<Mascota?> ObtenerPorIdAsync(int id)
     {
-        return await _context.Mascotas.FindAsync(id);
+        return await _context.Mascotas.Include(m => m.Dueno).FirstOrDefaultAsync(m => m.Id == id);
     }
 
     public async Task GuardarAsync(Mascota mascota)

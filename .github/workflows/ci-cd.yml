@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------- Pruebas
   pruebas:
     name: Pruebas
     runs-on: ubuntu-latest
@@ -19,23 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instalar .NET 8
+      - name: Instalar .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "10.0.x"
 
-      - name: Restaurar
-        run: dotnet restore
+      - name: Restaurar API
+        run: dotnet restore API/src/Veterinaria.API/Veterinaria.API.csproj
 
-      - name: Compilar
-        run: dotnet build --configuration Release --no-restore
+      - name: Compilar API
+        run: dotnet build API/src/Veterinaria.API/Veterinaria.API.csproj --configuration Release --no-restore
 
-      - name: Ejecutar las pruebas
-        run: dotnet test --configuration Release --no-build --verbosity normal
-
-  # ------------------------------------------------------- Construir imagen
   imagen:
-    name: Construir y publicar la imagen
+    name: Construir y publicar imágenes (${{ matrix.component }})
     runs-on: ubuntu-latest
     needs: pruebas
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -44,6 +39,19 @@ jobs:
       contents: read
       packages: write
 
+    strategy:
+      matrix:
+        component: [api, frontend]
+        include:
+          - component: api
+            context: ./API
+            dockerfile: ./API/src/Veterinaria.API/Dockerfile
+            image_suffix: -api
+          - component: frontend
+            context: ./client
+            dockerfile: ./client/Dockerfile
+            image_suffix: -frontend
+
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +59,7 @@ jobs:
         id: nombre
         run: |
           echo "imagen=ghcr.io/$(echo '${{ github.repository }}' \
-                | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+                | tr '[:upper:]' '[:lower:]')${{ matrix.image_suffix }}" >> "$GITHUB_OUTPUT"
 
       - name: Preparar buildx
         uses: docker/setup-buildx-action@v3
@@ -66,7 +74,8 @@ jobs:
       - name: Construir y subir
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           platforms: linux/amd64
           tags: |

@@ -81,7 +81,7 @@ public class DuenoService : IDuenoService
                 Especie = m.Especie,
                 Raza = m.Raza,
                 HistorialMedico = m.HistorialMedico,
-                DuenoId = m.DuenoId
+                NombreDueno = d.Nombre
             }) ?? new List<MascotaResponseDto>()
         });
     }
@@ -105,7 +105,7 @@ public class DuenoService : IDuenoService
                 Especie = m.Especie,
                 Raza = m.Raza,
                 HistorialMedico = m.HistorialMedico,
-                DuenoId = m.DuenoId
+                NombreDueno = d.Nombre
             }) ?? new List<MascotaResponseDto>()
         };
     }
