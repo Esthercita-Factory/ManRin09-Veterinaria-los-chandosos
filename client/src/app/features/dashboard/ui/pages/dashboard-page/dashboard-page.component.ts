@@ -24,7 +24,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
               <path d="M19 10.5h-4.5V6a1.5 1.5 0 00-3 0v4.5H7a1.5 1.5 0 000 3h4.5V18a1.5 1.5 0 003 0v-4.5H19a1.5 1.5 0 000-3z"/>
             </svg>
           </div>
-          <span class="text-xl font-bold tracking-wide">VetCare Admin</span>
+          <span class="text-xl font-bold tracking-wide">Veterinaria Los Chandosos</span>
         </div>
         <div class="flex items-center gap-6">
           <div class="relative hidden md:block">
@@ -53,7 +53,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
         <!-- Sidebar -->
         <aside class="w-64 bg-white border-r border-gray-200 flex flex-col p-4 shrink-0 shadow-sm hidden md:flex">
           <div class="bg-[#89A88C]/15 text-[#5D7A60] font-bold text-xs uppercase px-3 py-2 rounded-lg mb-4 text-center tracking-wider">
-            Veterinarian Dashboard
+            Los Chandosos Admin
           </div>
           <nav class="space-y-1.5 flex-1">
             <button (click)="activeTab='dashboard'" [class]="activeTab==='dashboard' ? 'flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-white bg-[#89A88C] shadow-sm w-full text-left' : 'flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 w-full text-left transition'">
@@ -113,7 +113,7 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-sm">
                     <thead><tr class="bg-gray-100/70 text-gray-700 font-semibold text-xs">
-                      <th class="py-2.5 px-4 rounded-l-lg">Mascota ID</th>
+                      <th class="py-2.5 px-4 rounded-l-lg">Mascota</th>
                       <th class="py-2.5 px-4">Fecha/Hora</th>
                       <th class="py-2.5 px-4">Motivo</th>
                       <th class="py-2.5 px-4 rounded-r-lg">Estado</th>
@@ -121,8 +121,8 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                     <tbody class="divide-y divide-gray-100">
                       @for (c of citas.slice(0,5); track c.id) {
                         <tr class="hover:bg-gray-50 transition">
-                          <td class="py-3 px-4">{{ c.mascotaId }}</td>
-                          <td class="py-3 px-4">{{ c.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                          <td class="py-3 px-4 font-semibold text-gray-700">{{ getMascotaNombre(c.mascotaId) }}</td>
+                          <td class="py-3 px-4">{{ c.fechaHora | date:'dd/MM/yyyy hh:mm a' }}</td>
                           <td class="py-3 px-4">{{ c.motivo }}</td>
                           <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="estadoClass(c.estado)">{{ c.estado }}</span></td>
                         </tr>
@@ -294,25 +294,43 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
               <h1 class="text-3xl font-extrabold text-[#233124] tracking-tight">Citas</h1>
               <button (click)="openCitaModal()" class="bg-[#89A88C] hover:bg-[#77957A] text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow-sm">+ Nueva Cita</button>
             </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+              <div class="flex flex-col sm:flex-row gap-3 items-end">
+                <div class="flex-1">
+                  <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Fecha</label>
+                  <input [(ngModel)]="searchCitaFecha" type="date" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" />
+                </div>
+                <div class="flex-1">
+                  <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Mascota</label>
+                  <input [(ngModel)]="searchCitaMascota" type="text" placeholder="Nombre de mascota..." class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#89A88C]" />
+                </div>
+                <div class="flex gap-2 shrink-0">
+                  <button (click)="searchCitaFecha=''; searchCitaMascota=''" type="button" class="border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+            </div>
+
             @if (errorCitas) { <div class="bg-red-50 text-red-600 rounded-lg px-4 py-3 mb-4 text-sm">{{ errorCitas }}</div> }
             @if (loadingCitas) { <p class="text-gray-400">Cargando citas...</p> }
             @if (!loadingCitas) {
               <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
                 <table class="w-full text-left text-sm">
                   <thead><tr class="bg-gray-100/70 text-gray-700 font-semibold text-xs">
-                    <th class="py-3 px-4 rounded-tl-2xl">ID</th>
-                    <th class="py-3 px-4">Mascota ID</th>
+                    <th class="py-3 px-4 rounded-tl-2xl">Mascota</th>
                     <th class="py-3 px-4">Fecha/Hora</th>
                     <th class="py-3 px-4">Motivo</th>
                     <th class="py-3 px-4">Estado</th>
                     <th class="py-3 px-4 rounded-tr-2xl">Acciones</th>
                   </tr></thead>
                   <tbody class="divide-y divide-gray-100">
-                    @for (c of citas; track c.id) {
+                    @for (c of citasFiltradas; track c.id) {
                       <tr class="hover:bg-gray-50 transition">
-                        <td class="py-3 px-4 text-gray-500">{{ c.id }}</td>
-                        <td class="py-3 px-4">{{ c.mascotaId }}</td>
-                        <td class="py-3 px-4">{{ c.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td class="py-3 px-4 font-semibold text-gray-700">{{ getMascotaNombre(c.mascotaId) }}</td>
+                        <td class="py-3 px-4">{{ c.fechaHora | date:'dd/MM/yyyy hh:mm a' }}</td>
                         <td class="py-3 px-4">{{ c.motivo }}</td>
                         <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="estadoClass(c.estado)">{{ c.estado }}</span></td>
                         <td class="py-3 px-4 flex gap-2">
@@ -321,8 +339,8 @@ import { VeterinarioService } from '../../../../../core/services/veterinario.ser
                         </td>
                       </tr>
                     }
-                    @if (citas.length === 0) {
-                      <tr><td colspan="6" class="py-8 text-center text-gray-400">No hay citas registradas.</td></tr>
+                    @if (citasFiltradas.length === 0) {
+                      <tr><td colspan="5" class="py-8 text-center text-gray-400">No hay citas que coincidan con la búsqueda.</td></tr>
                     }
                   </tbody>
                 </table>
@@ -549,6 +567,23 @@ export class DashboardPageComponent implements OnInit {
   hasSearched = false;
   mascotaForm = { nombre: '', especie: '', raza: '', duenoId: 0, historialMedico: '' };
   citaForm = { mascotaId: 0, fecha: '', hora: '08:00', motivo: '', estado: 'Pendiente' };
+
+  searchCitaFecha = '';
+  searchCitaMascota = '';
+
+  get citasFiltradas() {
+    return this.citas.filter(c => {
+      const matchFecha = !this.searchCitaFecha || c.fechaHora.startsWith(this.searchCitaFecha);
+      const mascotaName = this.getMascotaNombre(c.mascotaId).toLowerCase();
+      const matchMascota = !this.searchCitaMascota || mascotaName.includes(this.searchCitaMascota.toLowerCase());
+      return matchFecha && matchMascota;
+    });
+  }
+
+  getMascotaNombre(mascotaId: number): string {
+    const mascota = this.mascotas.find(m => m.id === mascotaId);
+    return mascota ? mascota.nombre : 'Desconocida';
+  }
 
   timeOptions = [
     '12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM', '06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',

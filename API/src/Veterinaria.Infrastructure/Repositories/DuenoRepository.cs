@@ -78,7 +78,8 @@ namespace Veterinaria.Infrastructure.Repositories
 
         public async Task ActualizarAsync(Dueno dueno)
         {
-            _context.Duenos.Update(dueno);
+            // El ChangeTracker de EF Core ya está rastreando la entidad y sus colecciones.
+            // Llamar a Update() puede interferir con las operaciones en colecciones Many-to-Many.
             await _context.SaveChangesAsync();
         }
 
