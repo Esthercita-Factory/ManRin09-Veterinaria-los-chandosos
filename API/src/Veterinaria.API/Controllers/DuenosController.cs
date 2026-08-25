@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Veterinaria.Application.DTOs;
 using Veterinaria.Application.Interfaces;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace Veterinaria.API.Controllers;
 
@@ -36,8 +37,8 @@ public class DuenosController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DuenoResponseDto>>> Get(
-        [FromQuery] string? email = null,
-        [FromQuery] string? documento = null)
+        [FromQuery] [MaxLength(100)] [EmailAddress] string? email = null,
+        [FromQuery] [MaxLength(20)] [RegularExpression(@"^[a-zA-Z0-9\-]*$")] string? documento = null)
     {
         var rol = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("rol")?.Value;
 
